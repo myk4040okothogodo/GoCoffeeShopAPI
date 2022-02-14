@@ -10,36 +10,45 @@ import (
 )
 
 func main() {
-    l := log.New(os.Stdout, "product-api", log.LstdFlags)
-    hh := handlers.NewHello(l)
-    gh := handlers.NewGoodbye(l)
-    sm := http.NewServeMux()
 
-    sm.Handle("/", hh)
-    sm.Handle("/goodbye", gh)
     
+    l := log.New(os.Stdout, "product-api", log.LstdFlags)
+    
+    //create the handlers
+    ph := handlers.NewProducts(l)
+
+    // create a new serve mux and register the handlers
+    sm := http.NewServeMux()
+    sm.Handle("/", ph)
+   
+    // create a new server 
     s := &http.Server{
         Addr: ":9090",
         Handler: sm,
+        ErrorLog: l,
         IdleTimeout:  120 * time.Second,
-        ReadTimeout:  1 * time.Second,
-        WriteTimeout: 1 * time.Second,
+        ReadTimeout:  5 * time.Second,
+        WriteTimeout: 10 * time.Second,
     
     }
     go func(){
+      l.Println("\n Starting server on port 9090: \n")
+        
         err := s.ListenAndServe()
         if err != nil {
-            l.Fatal(err)
+            l.Printf("Error starting server: %s\n", err)
+            os.Exit(1)
         }
     }()
     
-    sigChan := make(chan os.Signal)
-    signal.Notify(sigChan, os.Interrupt)
-    signal.Notify(sigChan, os.Kill)
+    c := make(chan os.Signal, 1)
+    signal.Notify(c, os.Interrupt)
+    signal.Notify(c, os.Kill)
     
-    sig := <- sigChan
-    l.Println("Received terminate, gracefully shutdown", sig)
+    sig := <- c
+    l.Println("Received signal", sig)
     
+    //gracefully shutdown the server, wiating max 30 seconds for current operations to finish
     tc, _  := context.WithTimeout(context.Background(), 30*time.Second)
     s.Shutdown(tc)
     
