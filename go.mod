@@ -1,0 +1,7 @@
+module github.com/myk4040okothogodo/GoMicroserve
+
+go 1.17
+
+replace github.com/myk4040okothogodo/GoMicroserve/handlers => ./handlers
+
+require github.com/myk4040okothogodo/GoMicroserve/handlers v0.0.0-00010101000000-000000000000
